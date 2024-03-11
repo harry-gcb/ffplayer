@@ -23,11 +23,14 @@ class PacketQueue {
     };
 public:
     int put(AVPacket *pkt);
-    int get(AVPacket *pkt, int block, int *serial);
+    int get(AVPacket *pkt, int block, int &serial);
     int size() const;
     int packet_size() const;
     void flush();
     void destroy();
+
+    int  pkt_serial();
+    bool request_aborted();
 private:
     int _put(AVPacket *pkt);
 private:
@@ -35,7 +38,7 @@ private:
     int m_size = 0;         // 当前队列包的总大小
     int64_t m_duration = 0; // 当前队列包的总播放时长
 
-    int m_serial = 0;
+    int m_serial = 1;
     std::atomic<bool> m_abort_request = false;
 
     std::mutex m_mutex;

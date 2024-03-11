@@ -35,7 +35,7 @@ int PacketQueue::_put(AVPacket *pkt) {
     return 0;
 }
 
-int PacketQueue::get(AVPacket *pkt, int block, int *serial) {
+int PacketQueue::get(AVPacket *pkt, int block, int &serial) {
     int ret = 0;
     Packet packet;
     std::unique_lock<std::mutex> lock{m_mutex};
@@ -54,12 +54,10 @@ int PacketQueue::get(AVPacket *pkt, int block, int *serial) {
         packet = m_queue.front();
         m_size -= packet.pkt->size + sizeof(packet);
         m_duration -= packet.pkt->duration;
+        serial = packet.serial;
         av_packet_move_ref(pkt, packet.pkt);
         av_packet_free(&packet.pkt);
         m_queue.pop();
-        if (serial) {
-            *serial = packet.serial;
-        }
         ret = 1;
         break;
     }
@@ -89,4 +87,12 @@ void PacketQueue::flush() {
 
 void PacketQueue::destroy() {
     flush();
+}
+
+int PacketQueue::pkt_serial() {
+    return m_serial;
+}
+
+bool PacketQueue::request_aborted() {
+    return m_abort_request;
 }

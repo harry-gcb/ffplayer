@@ -31,10 +31,10 @@ int Demuxer::close() {
 }
 
 void Demuxer::run() {
-    demux();
+    demux_loop();
 }
 
-void Demuxer::demux() {
+void Demuxer::demux_loop() {
     int ret = 0;
     bool last_paused = false;
     AVPacket *pkt = av_packet_alloc();

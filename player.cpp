@@ -26,4 +26,5 @@ int Player::open(const char *filename) {
 
 void Player::start() {
     m_demuxer->start();
+    m_audio_decoder->start();
 }

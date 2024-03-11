@@ -12,7 +12,7 @@ public:
     int close();
     virtual void run() override;
 private:
-    void demux();
+    void demux_loop();
 private:
     std::shared_ptr<Context> m_ctx;
 };
