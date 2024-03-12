@@ -42,7 +42,7 @@ int Decoder::decode(AVCodecContext *codec_ctx, AVFrame *frame) {
     int ret = AVERROR(EAGAIN);
 
     for (;;) {
-        if (m_queue->pkt_serial() == m_pkt_serial) {
+        if (m_queue->serial() == m_pkt_serial) {
             do {
                 if (m_queue->request_aborted()) {
                     return -1;
@@ -82,7 +82,7 @@ int Decoder::decode(AVCodecContext *codec_ctx, AVFrame *frame) {
         }
 
         do {
-            if (m_queue->size() == 0) {
+            if (m_queue->count() == 0) {
                 m_ctx->demux_cond.notify_one();
             }
             if (m_packet_pending) {
@@ -99,7 +99,7 @@ int Decoder::decode(AVCodecContext *codec_ctx, AVFrame *frame) {
                     m_next_pts_tb = m_start_pts_tb;
                 }
             }
-            if (m_queue->pkt_serial() == m_pkt_serial) {
+            if (m_queue->serial() == m_pkt_serial) {
                 break;
             }
             av_packet_unref(m_pkt);

@@ -1,4 +1,0 @@
-#ifndef FFPLAYER_AUDIO_PLAYER_H_
-#define FFPLAYER_AUDIO_PLAYER_H_
-
-#endif

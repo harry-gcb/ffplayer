@@ -6,6 +6,8 @@
 #include "context.h"
 #include "demuxer.h"
 #include "decoder.h"
+#include "video_player.h"
+#include "audio_player.h"
 
 
 class Player {
@@ -21,6 +23,8 @@ private:
     std::shared_ptr<Decoder> m_audio_decoder;
     std::shared_ptr<Decoder> m_video_decoder;
     std::shared_ptr<Decoder> m_subtitle_decoder;
+    std::shared_ptr<AudioPlayer> m_audio_player;
+    std::shared_ptr<VideoPlayer> m_video_player;
 };
 
 #endif

@@ -8,6 +8,11 @@ public:
     VideoDecoder(std::shared_ptr<Context> ctx);
 protected:
     virtual int _open(int stream_index, AVCodecContext *codec_ctx) override;
+    virtual void run() override;
+
+    void decode_loop();
+private:
+    bool drop_frame(AVFrame *frame);
 };
 
 #endif

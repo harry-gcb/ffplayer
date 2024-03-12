@@ -1,4 +1,0 @@
-#ifndef FFPLAYER_VIDIO_PLAYER_H_
-#define FFPLAYER_VIDIO_PLAYER_H_
-
-#endif

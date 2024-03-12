@@ -64,11 +64,11 @@ int PacketQueue::get(AVPacket *pkt, int block, int &serial) {
     return ret;
 }
 
-int PacketQueue::size() const {
+int PacketQueue::count() const {
     return m_queue.size();
 }
 
-int PacketQueue::packet_size() const {
+int PacketQueue::size() const {
     return m_size;
 }
 
@@ -89,7 +89,7 @@ void PacketQueue::destroy() {
     flush();
 }
 
-int PacketQueue::pkt_serial() {
+int PacketQueue::serial() {
     return m_serial;
 }
 

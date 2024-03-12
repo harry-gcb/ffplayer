@@ -16,10 +16,17 @@ extern "C" {
 }
 #endif
 
+#include "clock.h"
 #include "packet_queue.h"
 
 #define MAX_QUEUE_SIZE (16*1024*1024)
 #define MIN_FRAMES 10000
+
+typedef enum SyncType {
+    SYNC_TYPE_AUDIO,
+    SYNC_TYPE_VIDEO,
+    SYNC_TYPE_EXTERN,
+} SYNC_TYPE;
 
 class Context {
     friend class Player;
@@ -40,25 +47,39 @@ private:
     AVCodecContext *audio_codec_ctx = nullptr; // 音频流解码器上下文
     AVStream       *audio_stream = nullptr;    // 音频流
     PacketQueue     audio_packet_queue;        // 音频packet队列
+    Clock           audio_clock{&audio_packet_queue.m_serial};               // 音频时钟
 
     int             video_index = -1;          // 视频流索引
     AVCodecContext *video_codec_ctx = nullptr; // 视频流解码器上下文
     AVStream       *video_stream = nullptr;    // 视频流
     PacketQueue     video_packet_queue;        // 视频packet队列
+    Clock           video_clock{&video_packet_queue.m_serial};               // 视频时钟
 
     int             subtitle_index = -1;          // 字幕流索引
     AVCodecContext *subtitle_codec_ctx = nullptr; // 字幕流解码器上下文
     AVStream       *subtitle_stream = nullptr;    // 字幕流
     PacketQueue     subtitle_packet_queue;        // 字幕packet队列
 
+    Clock           extern_clock{&extern_clock.m_serial};                 // 外部时钟
+
     std::atomic<bool> paused = false;      // 暂停/恢复播放
 
+    // seek操作
     std::atomic<bool> seek_req = false;    // seek操作
     int seek_flags = 0;
     int64_t seek_pos = 0;
     int64_t seek_rel = 0;
 
     int eof = 0;
+
+    // 音视频同步
+    SYNC_TYPE sync_type = SYNC_TYPE_AUDIO;
+    Clock *master_clock = &audio_clock;
+
+    double frame_last_returned_time; // 用于记录上一帧在解码后被返回的时间戳
+    double frame_last_filter_delay;  // 用于记录上一帧通过滤镜链后的延迟时间
+    int frame_drops_early = 0; // 统计被丢弃的时钟有误差的包，放入frame队列之前丢弃
+
 
     AVInputFormat *iformat = nullptr;
 

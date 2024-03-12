@@ -89,12 +89,12 @@ void Demuxer::demux_loop() {
 
         // TODO queue_attachments_req
 
-        if (m_ctx->audio_packet_queue.packet_size() +
-            m_ctx->video_packet_queue.packet_size() +
-            m_ctx->subtitle_packet_queue.packet_size() > MAX_QUEUE_SIZE ||
-            m_ctx->audio_packet_queue.size() > MIN_FRAMES ||
-            m_ctx->video_packet_queue.size() > MIN_FRAMES ||
-            m_ctx->subtitle_packet_queue.packet_size() > MIN_FRAMES) {
+        if (m_ctx->audio_packet_queue.size() +
+            m_ctx->video_packet_queue.size() +
+            m_ctx->subtitle_packet_queue.size() > MAX_QUEUE_SIZE ||
+            m_ctx->audio_packet_queue.count() > MIN_FRAMES ||
+            m_ctx->video_packet_queue.count() > MIN_FRAMES ||
+            m_ctx->subtitle_packet_queue.count() > MIN_FRAMES) {
             std::unique_lock<std::mutex> lock{m_ctx->demux_mutex};
             m_ctx->demux_cond.wait_for(lock, std::chrono::milliseconds(10));
             continue;

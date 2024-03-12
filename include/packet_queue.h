@@ -21,15 +21,16 @@ class PacketQueue {
         AVPacket *pkt; // packet 数据
         int serial;    // 当前时序
     };
+    friend class Context;
 public:
     int put(AVPacket *pkt);
     int get(AVPacket *pkt, int block, int &serial);
-    int size() const;
-    int packet_size() const;
+    int count() const; // 队列中packet的个数
+    int size() const;  // 队列中packet占用的内存大小
     void flush();
     void destroy();
 
-    int  pkt_serial();
+    int  serial();
     bool request_aborted();
 private:
     int _put(AVPacket *pkt);
