@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 
 static EventLoop *gInstance = nullptr;
-static const int SDL_APP_EVENT_TIMEOUT = 1;
+static const int SDL_APP_EVENT_TIMEOUT = 10;
 
 EventLoop::EventLoop() {
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -18,7 +18,11 @@ int EventLoop::run() {
     SDL_Event event;
     for (;;) {
         // 带超时的事件等待，即使没有事件发生，在设置的时间到来后也会返回，对非阻塞场景比较友好
-        SDL_WaitEventTimeout(&event, SDL_APP_EVENT_TIMEOUT);
+        int timeout = SDL_WaitEventTimeout(&event, SDL_APP_EVENT_TIMEOUT);
+        if (0 == timeout) {
+            // spdlog::info("SDL_WaitEventTimeout timeout={}", timeout);
+            continue;
+        }
         switch (event.type) {
             case SDL_QUIT:
                 SDL_Quit();

@@ -12,6 +12,8 @@ protected:
     virtual void run() override;
 
     void decode_loop();
+private:
+    bool enqueue_frame(AVFrame* frame);
 };
 
 #endif

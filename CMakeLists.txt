@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.20)
 project(ffplayer)
 
 include($ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
@@ -21,14 +24,14 @@ add_executable(ffplayer
     ${PROJECT_SOURCE_DIR}/src/video_player.cpp
     ${PROJECT_SOURCE_DIR}/src/audio_player.cpp
     ${PROJECT_SOURCE_DIR}/src/packet_queue.cpp
+    ${PROJECT_SOURCE_DIR}/src/frame_queue.cpp
     ${PROJECT_SOURCE_DIR}/src/context.cpp
     ${PROJECT_SOURCE_DIR}/src/thread_base.cpp
     ${PROJECT_SOURCE_DIR}/src/opts.cpp
     ${PROJECT_SOURCE_DIR}/src/clock.cpp
+    ${PROJECT_SOURCE_DIR}/src/frame.cpp
 )
 
-# target_include_directories(ffplayer PRIVATE ${FFMPEG_INCLUDE_DIRS})
-# target_link_directories(ffplayer PRIVATE ${FFMPEG_LIBRARY_DIRS})   
 target_include_directories(ffplayer PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(ffplayer
     PRIVATE

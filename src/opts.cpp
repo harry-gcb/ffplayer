@@ -1,4 +1,4 @@
 #include "opts.h"
 
 AVDictionary *format_opts = nullptr;
-int framedrop = 1;
+int framedrop = -1;

@@ -29,23 +29,40 @@ void AudioDecoder::run() {
 }
 
 void AudioDecoder::decode_loop() {
-    int ret = 0;
     int got_frame = 0;
     AVFrame *frame = av_frame_alloc();
     if (!frame) {
         spdlog::error("av_frame_alloc failed");
         return;
     }
-    do {
+    for (;;) {
         got_frame = decode(m_ctx->audio_codec_ctx, frame);
-        if (ret < 0) {
+        if (got_frame < 0) {
             break;
         }
-        if (got_frame) {
-            spdlog::info("got_frame={}, frame->pts={}", got_frame, frame->pts);
+        if (!enqueue_frame(frame)) {
+            break;
         }
 
-    } while (ret >= 0 || ret == AVERROR(EAGAIN) || ret == AVERROR_EOF);
+        if (m_ctx->audio_packet_queue.serial() != m_pkt_serial) {
+            break;
+        }
+    };
 
     av_frame_free(&frame);
+}
+
+bool AudioDecoder::enqueue_frame(AVFrame* frame) {
+    Frame* af = m_ctx->audio_frame_queue.peek_writable();
+    if (!af) {
+        return false;
+    }
+    af->pts = frame->pts;
+    af->pos = frame->pkt_pos;
+    af->serial = m_pkt_serial;
+    af->duration = frame->duration;
+
+    av_frame_move_ref(af->frame, frame);
+    m_ctx->audio_frame_queue.push();
+    return true;
 }

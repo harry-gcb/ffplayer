@@ -18,6 +18,7 @@ int Demuxer::open() {
         spdlog::error("avformat_find_stream_info failed, ret={}", ret);
         return -1;
     }
+    m_ctx->max_frame_duration = (m_ctx->fmt_ctx->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;
     av_dump_format(m_ctx->fmt_ctx, 0, m_ctx->filename, 0);
     return 0;
 }
@@ -132,7 +133,7 @@ void Demuxer::demux_loop() {
         } else {
             m_ctx->eof = 0;
         }
-        spdlog::info("av_read_frame a packet, ret={}, stream_index={}", ret, pkt->stream_index);
+        // spdlog::info("av_read_frame a packet, ret={}, stream_index={}", ret, pkt->stream_index);
         // TODO pkt_in_play_range
         if (pkt->stream_index == m_ctx->audio_index) {
             m_ctx->audio_packet_queue.put(pkt);

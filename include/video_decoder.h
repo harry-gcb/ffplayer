@@ -13,6 +13,7 @@ protected:
     void decode_loop();
 private:
     bool drop_frame(AVFrame *frame);
+    bool enqueue_frame(AVFrame* frame);
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include "clock.h"
+#include "opts.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,10 +12,11 @@ extern "C" {
 }
 #endif
 
-Clock::Clock(int *pkt_serial)
+Clock::Clock(int *pkt_serial, SYNC_TYPE sync_type)
     : m_speed(1.0),
       m_paused(0),
-      m_pkt_serial(pkt_serial) {
+      m_pkt_serial(pkt_serial),
+      m_sync_type(sync_type) {
     set(NAN, -1);
 }
 
@@ -45,4 +47,16 @@ double Clock::get() {
 
 int Clock::serial() {
     return m_serial;
+}
+
+void Clock::sync_from_slave(Clock& slave) {
+    double clock = get();
+    double slave_clock = slave.get();
+    if (!isnan(slave_clock) && (isnan(clock) || fabs(clock - slave_clock) > AV_NOSYNC_THRESHOLD)) {
+        set(slave_clock, slave.serial());
+    }
+}
+
+SYNC_TYPE Clock::sync_type() const {
+    return m_sync_type;
 }

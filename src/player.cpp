@@ -6,10 +6,6 @@ Player::Player()
 {
 }
 
-// void Player::setFilePath(const std::string &filePath) {
-//     m_filePath = filePath;
-// }
-
 int Player::open(const char *filename) {
     m_ctx = std::make_shared<Context>(filename);
     m_demuxer = std::make_shared<Demuxer>(m_ctx);
