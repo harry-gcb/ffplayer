@@ -74,6 +74,10 @@ private:
     int64_t seek_pos = 0;
     int64_t seek_rel = 0;
 
+    bool muted = false; // 静音
+    int audio_volume = 100; // 音量控制
+
+
     int eof = 0;
     // 强制刷新视频
     int force_refresh = 0;

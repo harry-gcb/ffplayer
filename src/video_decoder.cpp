@@ -32,7 +32,7 @@ void VideoDecoder::decode_loop() {
             continue;
         }
         // TODO add video filters, filter may add while 
-        // TODO ÉèÖÃ frame_last_filter_delay
+        // TODO è®¾ç½® frame_last_filter_delay
         
         if (!enqueue_frame(frame)) {
             break;
@@ -54,12 +54,12 @@ bool VideoDecoder::drop_frame(AVFrame *frame) {
         dpts = av_q2d(m_ctx->video_stream->time_base) * frame->pts;
     }
     frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(m_ctx->fmt_ctx, m_ctx->video_stream, frame);
-    // "-framedrop"Ñ¡ÏîÓÃÓÚÉèÖÃµ±ÊÓÆµÖ¡Ê§È¥Í¬²½Ê±£¬ÊÇ·ñ¶ªÆúÊÓÆµÖ¡¡£"-framedrop"Ñ¡ÏîÒÔbool·½Ê½¸Ä±ä±äÁ¿framedropÖµ¡£
-    // ÒôÊÓÆµÍ¬²½·½Ê½ÓĞÈıÖÖ£ºAÍ¬²½µ½ÊÓÆµ£¬BÍ¬²½µ½ÒôÆµ£¬CÍ¬²½µ½Íâ²¿Ê±ÖÓ¡£
-    // 1) µ±ÃüÁîĞĞ²»´ø"-framedrop"Ñ¡Ïî»ò"-noframedrop"Ê±£¬framedropÖµÎªÄ¬ÈÏÖµ-1£¬ÈôÍ¬²½·½Ê½ÊÇ"Í¬²½µ½ÊÓÆµ"
-    //    Ôò²»¶ªÆúÊ§È¥Í¬²½µÄÊÓÆµÖ¡£¬·ñÔò½«¶ªÆúÊ§È¥Í¬²½µÄÊÓÆµÖ¡¡£
-    // 2) µ±ÃüÁîĞĞ´ø"-framedrop"Ñ¡ÏîÊ±£¬framedropÖµÎª1£¬ÎŞÂÛºÎÖÖÍ¬²½·½Ê½£¬¾ù¶ªÆúÊ§È¥Í¬²½µÄÊÓÆµÖ¡¡£
-    // 3) µ±ÃüÁîĞĞ´ø"-noframedrop"Ñ¡ÏîÊ±£¬framedropÖµÎª0£¬ÎŞÂÛºÎÖÖÍ¬²½·½Ê½£¬¾ù²»¶ªÆúÊ§È¥Í¬²½µÄÊÓÆµÖ¡¡£
+    // "-framedrop"é€‰é¡¹ç”¨äºè®¾ç½®å½“è§†é¢‘å¸§å¤±å»åŒæ­¥æ—¶ï¼Œæ˜¯å¦ä¸¢å¼ƒè§†é¢‘å¸§ã€‚"-framedrop"é€‰é¡¹ä»¥boolæ–¹å¼æ”¹å˜å˜é‡framedropå€¼ã€‚
+    // éŸ³è§†é¢‘åŒæ­¥æ–¹å¼æœ‰ä¸‰ç§ï¼šAåŒæ­¥åˆ°è§†é¢‘ï¼ŒBåŒæ­¥åˆ°éŸ³é¢‘ï¼ŒCåŒæ­¥åˆ°å¤–éƒ¨æ—¶é’Ÿã€‚
+    // 1) å½“å‘½ä»¤è¡Œä¸å¸¦"-framedrop"é€‰é¡¹æˆ–"-noframedrop"æ—¶ï¼Œframedropå€¼ä¸ºé»˜è®¤å€¼-1ï¼Œè‹¥åŒæ­¥æ–¹å¼æ˜¯"åŒæ­¥åˆ°è§†é¢‘"
+    //    åˆ™ä¸ä¸¢å¼ƒå¤±å»åŒæ­¥çš„è§†é¢‘å¸§ï¼Œå¦åˆ™å°†ä¸¢å¼ƒå¤±å»åŒæ­¥çš„è§†é¢‘å¸§ã€‚
+    // 2) å½“å‘½ä»¤è¡Œå¸¦"-framedrop"é€‰é¡¹æ—¶ï¼Œframedropå€¼ä¸º1ï¼Œæ— è®ºä½•ç§åŒæ­¥æ–¹å¼ï¼Œå‡ä¸¢å¼ƒå¤±å»åŒæ­¥çš„è§†é¢‘å¸§ã€‚
+    // 3) å½“å‘½ä»¤è¡Œå¸¦"-noframedrop"é€‰é¡¹æ—¶ï¼Œframedropå€¼ä¸º0ï¼Œæ— è®ºä½•ç§åŒæ­¥æ–¹å¼ï¼Œå‡ä¸ä¸¢å¼ƒå¤±å»åŒæ­¥çš„è§†é¢‘å¸§ã€‚
     if (framedrop > 0 || (framedrop && m_ctx->master_clock->sync_type() != SYNC_TYPE_VIDEO) && frame->pts != AV_NOPTS_VALUE) {
         double diff = dpts - m_ctx->master_clock->get();
         if (!isnan(diff) &&
@@ -68,7 +68,7 @@ bool VideoDecoder::drop_frame(AVFrame *frame) {
             m_pkt_serial == m_ctx->video_clock.serial() &&
             m_ctx->video_packet_queue.count())
             m_ctx->frame_drops_early++;
-            av_frame_unref(frame); // ÊÓÆµÖ¡Ê§È¥Í¬²½ÔòÖ±½ÓÈÓµô
+            av_frame_unref(frame); // è§†é¢‘å¸§å¤±å»åŒæ­¥åˆ™ç›´æ¥æ‰”æ‰
             return true;
     }
     return false;

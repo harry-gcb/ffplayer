@@ -8,6 +8,7 @@
 class Demuxer: public ThreadBase {
 public:
     Demuxer(std::shared_ptr<Context> ctx);
+    ~Demuxer();
     int open();
     int close();
     virtual void run() override;

@@ -14,33 +14,33 @@ extern "C" {
 extern AVDictionary *format_opts;
 extern int framedrop;
 
-// frame¶ÓÁĞ²ÎÊı
+// frameé˜Ÿåˆ—å‚æ•°
 #define VIDEO_FRAME_QUEUE_SIZE 3
 #define SUBTITLE_FRAME_QUEUE_SIZE 16
 #define AUDIO_FRAME_QUEUE_SIZE 9
 #define FRAME_QUEUE_SIZE FFMAX(AUDIO_FRAME_QUEUE_SIZE, FFMAX(VIDEO_FRAME_QUEUE_SIZE, SUBTITLE_FRAME_QUEUE_SIZE))
 
 /* no AV sync correction is done if below the minimum AV sync threshold */
-// Èç¹ûµÍÓÚ×îĞ¡ AV Í¬²½ãĞÖµ£¬Ôò²»½øĞĞ AV Í¬²½Ğ£Õı
+// å¦‚æœä½äºæœ€å° AV åŒæ­¥é˜ˆå€¼ï¼Œåˆ™ä¸è¿›è¡Œ AV åŒæ­¥æ ¡æ­£
 #define AV_SYNC_THRESHOLD_MIN 0.04
 
 /* AV sync correction is done if above the maximum AV sync threshold */
-// Èç¹û¸ßÓÚ×î´ó AV Í¬²½ãĞÖµ£¬ÔòÍê³É AV Í¬²½Ğ£Õı
+// å¦‚æœé«˜äºæœ€å¤§ AV åŒæ­¥é˜ˆå€¼ï¼Œåˆ™å®Œæˆ AV åŒæ­¥æ ¡æ­£
 #define AV_SYNC_THRESHOLD_MAX 0.1
 
 /* If a frame duration is longer than this, it will not be duplicated to compensate AV sync */
-// Èç¹ûÖ¡³ÖĞøÊ±¼ä³¤ÓÚ´Ë£¬Ôò²»»á¸´ÖÆ¸ÃÖ¡ÒÔ²¹³¥ AV Í¬²½
+// å¦‚æœå¸§æŒç»­æ—¶é—´é•¿äºæ­¤ï¼Œåˆ™ä¸ä¼šå¤åˆ¶è¯¥å¸§ä»¥è¡¥å¿ AV åŒæ­¥
 #define AV_SYNC_FRAMEDUP_THRESHOLD 0.1
 
 /* no AV correction is done if too big error */
-// Èç¹ûÎó²îÌ«´ó£¬Ôò²»½øĞĞ AV Ğ£Õı
+// å¦‚æœè¯¯å·®å¤ªå¤§ï¼Œåˆ™ä¸è¿›è¡Œ AV æ ¡æ­£
 #define AV_NOSYNC_THRESHOLD 10.0
 
 /* Minimum SDL audio buffer size, in samples. */
-// ×îĞ¡ SDL ÒôÆµ»º³åÇø´óĞ¡£¨ÒÔÑù±¾Îªµ¥Î»£©
+// æœ€å° SDL éŸ³é¢‘ç¼“å†²åŒºå¤§å°ï¼ˆä»¥æ ·æœ¬ä¸ºå•ä½ï¼‰
 #define SDL_AUDIO_MIN_BUFFER_SIZE 512
 /* Calculate actual buffer size keeping in mind not cause too frequent audio callbacks */
-// ¼ÆËãÊµ¼Ê»º³åÇø´óĞ¡£¬¼Ç×¡²»Òªµ¼ÖÂ¹ıÓÚÆµ·±µÄÒôÆµ»Øµ÷
+// è®¡ç®—å®é™…ç¼“å†²åŒºå¤§å°ï¼Œè®°ä½ä¸è¦å¯¼è‡´è¿‡äºé¢‘ç¹çš„éŸ³é¢‘å›è°ƒ
 #define SDL_AUDIO_MAX_CALLBACKS_PER_SEC 30
 
 #endif

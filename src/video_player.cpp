@@ -170,5 +170,5 @@ double VideoPlayer::coumpte_target_delay(double delay) {
 
 void VideoPlayer::update_video_pts(double pts, int serial) {
     m_ctx->video_clock.set(pts, serial);
-    m_ctx->video_clock.sync_from_slave(m_ctx->extern_clock);
+    // m_ctx->video_clock.sync_from_slave(m_ctx->extern_clock);
 }

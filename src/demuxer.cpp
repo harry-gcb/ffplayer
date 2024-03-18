@@ -7,6 +7,13 @@ Demuxer::Demuxer(std::shared_ptr<Context> ctx)
 {
 }
 
+Demuxer::~Demuxer() {
+    if (m_ctx->fmt_ctx) {
+        avformat_free_context(m_ctx->fmt_ctx);
+        m_ctx->fmt_ctx = nullptr;
+    }
+}
+
 int Demuxer::open() {
     int ret = avformat_open_input(&m_ctx->fmt_ctx, m_ctx->filename, m_ctx->iformat, nullptr);
     if (ret < 0) {

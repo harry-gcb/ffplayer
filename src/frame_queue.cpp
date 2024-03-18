@@ -24,7 +24,7 @@ int FrameQueue::rindex_shown() {
     return m_rindex_shown;
 }
 
-// ÕÒµ½¿ÉĞ´ÈëÖ¡
+// æ‰¾åˆ°å¯å†™å…¥å¸§
 Frame* FrameQueue::peek_writable() {
     std::unique_lock lock(m_mutex);
     while (m_size >= m_max_size && m_pktq->request_aborted()) {
@@ -36,7 +36,7 @@ Frame* FrameQueue::peek_writable() {
     return &m_queue[m_windex];
 }
 
-// ÍÆËÍÒ»Ö¡Êı¾İµ½¶ÓÁĞ
+// æ¨é€ä¸€å¸§æ•°æ®åˆ°é˜Ÿåˆ—
 void FrameQueue::push() {
     if (++m_windex == m_max_size) {
         m_windex = 0;
@@ -46,7 +46,7 @@ void FrameQueue::push() {
     m_cond.notify_one();
 }
 
-// ¶ÁÈ¡Ò»Ö¡Êı¾İ
+// è¯»å–ä¸€å¸§æ•°æ®
 Frame* FrameQueue::peek_readable() {
     std::unique_lock lock(m_mutex);
     while (m_size - m_rindex_shown <= 0 && !m_pktq->request_aborted()) {
@@ -58,7 +58,7 @@ Frame* FrameQueue::peek_readable() {
     return &m_queue[(m_rindex + m_rindex_shown) % m_max_size];
 }
 
-// ¶Á×ßÒ»Ö¡Êı¾İ
+// è¯»èµ°ä¸€å¸§æ•°æ®
 void FrameQueue::next() {
     if (m_keep_last && !m_rindex_shown) {
         m_rindex_shown = 1;
@@ -72,15 +72,15 @@ void FrameQueue::next() {
     m_size--;
     m_cond.notify_one();
 }
-// ²éÕÒÉÏÒ»Ö¡
+// æŸ¥æ‰¾ä¸Šä¸€å¸§
 Frame* FrameQueue::peek_last() {
     return &m_queue[m_rindex];
 }
-// ²éÕÒµ±Ç°Ö¡
+// æŸ¥æ‰¾å½“å‰å¸§
 Frame* FrameQueue::peek() {
     return &m_queue[(m_rindex + m_rindex_shown) % m_max_size];
 }
-// ²éÕÒÏÂÒ»Ö¡
+// æŸ¥æ‰¾ä¸‹ä¸€å¸§
 Frame* FrameQueue::peek_next() {
     return &m_queue[(m_rindex + m_rindex_shown + 1) % m_max_size];
 }

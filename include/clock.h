@@ -12,12 +12,12 @@ class Clock {
 public:
     Clock(int *pkt_serial, SYNC_TYPE sync_type);
     void set(double pts, int serial);
+    void set_at(double pts, int serial, double time);
     double get();
     int serial();
-    void sync_from_slave(Clock& slave);
+    // void sync_from_slave(Clock& slave);
     SYNC_TYPE sync_type() const;
-private:
-    void set_at(double pts, int serial, double time);
+
 private:
     int m_serial = 0;            // 时钟依赖packet队列的序列号
     int m_paused = 0;            // 播放/暂停操作

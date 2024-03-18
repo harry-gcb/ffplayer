@@ -49,13 +49,13 @@ int Clock::serial() {
     return m_serial;
 }
 
-void Clock::sync_from_slave(Clock& slave) {
-    double clock = get();
-    double slave_clock = slave.get();
-    if (!isnan(slave_clock) && (isnan(clock) || fabs(clock - slave_clock) > AV_NOSYNC_THRESHOLD)) {
-        set(slave_clock, slave.serial());
-    }
-}
+// void Clock::sync_from_slave(Clock& slave) {
+//     double clock = get();
+//     double slave_clock = slave.get();
+//     if (!isnan(slave_clock) && (isnan(clock) || fabs(clock - slave_clock) > AV_NOSYNC_THRESHOLD)) {
+//         set(slave_clock, slave.serial());
+//     }
+// }
 
 SYNC_TYPE Clock::sync_type() const {
     return m_sync_type;
