@@ -1,3 +1,4 @@
+#include <spdlog/spdlog.h>
 #include "audio_player.h"
 
 #ifdef __cplusplus
@@ -5,6 +6,7 @@ extern "C" {
 #endif
 
 #include <libavutil/time.h>
+#include <libavutil/opt.h>
 
 #ifdef __cplusplus
 }
@@ -33,9 +35,18 @@ int AudioPlayer::open() {
     desired.callback = callback;
     desired.userdata = this;
     m_audio_dev_id = SDL_OpenAudioDevice(nullptr, 0, &desired, &optained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+    if (0 == m_audio_dev_id) {
+        spdlog::error("SDL_OpenAudio failed {}", SDL_GetError());
+    }
+
+    // spdlog::error(NULL, AV_LOG_WARNING, "SDL_OpenAudio (%d channels, %d Hz): %s\n", wanted_spec.channels, wanted_spec.freq, SDL_GetError());
     // TODO sdl desired audio format unsupported
-    m_audio_hw_buf_size = optained.size;
-    m_bytes_per_sec = av_samples_get_buffer_size(nullptr, desired.channels, desired.freq, static_cast<AVSampleFormat>(desired.format), 1);
+    // m_audio_hw_buf_size = optained.size;
+    m_audio_hw_buf_size = 2048;
+    m_bytes_per_sec = av_samples_get_buffer_size(nullptr, desired.channels, desired.freq, AV_SAMPLE_FMT_S16, 1);
+    spdlog::info("channels={}, freq={}, format={}, silence={}, samples={}", desired.channels, desired.freq, desired.format, desired.silence, desired.samples);
+    spdlog::info("channels={}, freq={}, format={}, silence={}, samples={}", optained.channels, optained.freq, optained.format, optained.silence, optained.samples);
+    spdlog::info("m_bytes_per_sec={}", m_bytes_per_sec);
     return m_audio_dev_id;
 }
 
@@ -103,12 +114,65 @@ int AudioPlayer::get_audio_data() {
         m_ctx->audio_frame_queue.next();
     } while (af->serial != m_ctx->audio_packet_queue.serial());
 
-    int data_size = av_samples_get_buffer_size(nullptr,
-        af->frame->ch_layout.nb_channels,
-        af->frame->nb_samples,
-        static_cast<AVSampleFormat>(af->frame->format),
-        1);
-    
+    if (!m_ctx->audio_swr_ctx) {
+        m_ctx->audio_swr_ctx = swr_alloc();
+        if (!m_ctx->audio_swr_ctx) {
+            spdlog::error("swr_alloc failed");
+            return -1;
+        }
+         
+        //swr_alloc_set_opts2(&m_ctx->audio_swr_ctx,
+        //    &af->frame->ch_layout, AV_SAMPLE_FMT_S16, af->frame->sample_rate,
+        //    &af->frame->ch_layout, static_cast<AVSampleFormat>(af->frame->format), af->frame->sample_rate,
+        //    0, nullptr);
+        av_opt_set_chlayout(m_ctx->audio_swr_ctx, "in_chlayout", &af->frame->ch_layout, 0);
+        av_opt_set_int(m_ctx->audio_swr_ctx, "in_sample_rate", af->frame->sample_rate, 0);
+        av_opt_set_sample_fmt(m_ctx->audio_swr_ctx, "in_sample_fmt", static_cast<AVSampleFormat>(af->frame->format), 0);
+
+        av_opt_set_chlayout(m_ctx->audio_swr_ctx, "out_chlayout", &af->frame->ch_layout, 0);
+        av_opt_set_int(m_ctx->audio_swr_ctx, "out_sample_rate", af->frame->sample_rate, 0);
+        av_opt_set_sample_fmt(m_ctx->audio_swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
+
+        if (swr_init(m_ctx->audio_swr_ctx) < 0) {
+            spdlog::error("swr_init failed");
+            return -1;
+        }
+    }
+
+    if (m_ctx->audio_swr_ctx)
+    {
+        const uint8_t** in = (const uint8_t**)af->frame->extended_data;
+        uint8_t** out = &m_current_audio_buf_data;
+        int data_size = av_samples_get_buffer_size(nullptr,
+            af->frame->ch_layout.nb_channels,
+            af->frame->nb_samples,
+            AV_SAMPLE_FMT_S16,
+            0);
+        av_fast_malloc(&m_current_audio_buf_data, (unsigned int *)&m_current_audio_buf_size, data_size);
+        if (!m_current_audio_buf_data) {
+            spdlog::error("av_fast_malloc failed");
+            return -1;
+        }
+        int len = swr_convert(m_ctx->audio_swr_ctx, out, af->frame->nb_samples, in, af->frame->nb_samples);
+        if (len < 0) {
+            spdlog::error("swr_convert failed");
+            return -1;
+        }
+        
+        m_current_audio_buf_size = av_samples_get_buffer_size(nullptr, af->frame->ch_layout.nb_channels,
+            len, AV_SAMPLE_FMT_S16, 1);
+    }
+    else {
+        int data_size = av_samples_get_buffer_size(nullptr,
+            af->frame->ch_layout.nb_channels,
+            af->frame->nb_samples,
+            static_cast<AVSampleFormat>(af->frame->format),
+            1);
+        m_current_audio_buf_data = af->frame->data[0];
+        m_current_audio_buf_size = data_size;
+    }
+
+
     // TODO synchronize_audio
 
     // TODO af->frame->format != audio_src.fmt
@@ -122,8 +186,9 @@ int AudioPlayer::get_audio_data() {
         m_current_audio_clock = NAN;
     }
     m_current_audio_clock_serial = af->serial;
-    m_current_audio_buf_data = af->frame->data[0];
-    m_current_audio_buf_size = data_size;
     m_current_audio_buf_index = 0;
+    //spdlog::info("audio:%d ch:%d fmt:%s layout:%s serial:%d to rate:%d ch:%d fmt:%s layout:%s serial:%d\n",
+    //    is->audio_filter_src.freq, is->audio_filter_src.ch_layout.nb_channels, av_get_sample_fmt_name(is->audio_filter_src.fmt), buf1, last_serial,
+    //    frame->sample_rate, frame->ch_layout.nb_channels, av_get_sample_fmt_name(frame->format), buf2, is->auddec.pkt_serial);
     return 0;
 }

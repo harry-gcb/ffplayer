@@ -11,6 +11,7 @@ extern "C" {
 
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libswresample/swresample.h>
 
 #ifdef __cplusplus
 }
@@ -45,7 +46,8 @@ private:
     AVStream       *audio_stream = nullptr;    // 音频流
     PacketQueue     audio_packet_queue;        // 音频packet队列
     Clock           audio_clock{&audio_packet_queue.m_serial, SYNC_TYPE_AUDIO};               // 音频时钟
-    FrameQueue      audio_frame_queue{ &audio_packet_queue ,AUDIO_FRAME_QUEUE_SIZE, 0 }; //音频帧队列
+    FrameQueue      audio_frame_queue{ &audio_packet_queue ,AUDIO_FRAME_QUEUE_SIZE, 1 }; //音频帧队列
+    SwrContext     *audio_swr_ctx = nullptr;
 
     int             video_index = -1;          // 视频流索引
     AVCodecContext *video_codec_ctx = nullptr; // 视频流解码器上下文
@@ -60,9 +62,10 @@ private:
     AVCodecContext *subtitle_codec_ctx = nullptr; // 字幕流解码器上下文
     AVStream       *subtitle_stream = nullptr;    // 字幕流
     PacketQueue     subtitle_packet_queue;        // 字幕packet队列
-    FrameQueue      subtitle_frame_queue{ &subtitle_packet_queue , SUBTITLE_FRAME_QUEUE_SIZE, 0 }; // 字幕帧队列
+    FrameQueue      subtitle_frame_queue{ &subtitle_packet_queue , SUBTITLE_FRAME_QUEUE_SIZE, 1 }; // 字幕帧队列
 
-    Clock           extern_clock{&extern_clock.m_serial, SYNC_TYPE_EXTERN};                 // 外部时钟
+    // TODO
+    // Clock           extern_clock{&extern_clock.m_serial, SYNC_TYPE_EXTERN};                 // 外部时钟
 
     double max_frame_duration = 0.0; // 一帧的最大间隔
 

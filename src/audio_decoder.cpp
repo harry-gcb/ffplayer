@@ -57,10 +57,10 @@ bool AudioDecoder::enqueue_frame(AVFrame* frame) {
     if (!af) {
         return false;
     }
-    af->pts = frame->pts;
+    af->pts = frame->pts == AV_NOPTS_VALUE ? NAN : av_q2d(m_ctx->audio_codec_ctx->time_base) * frame->pts;
     af->pos = frame->pkt_pos;
     af->serial = m_pkt_serial;
-    af->duration = frame->duration;
+    af->duration = av_q2d(AVRational{ frame->nb_samples, frame->sample_rate });
 
     av_frame_move_ref(af->frame, frame);
     m_ctx->audio_frame_queue.push();

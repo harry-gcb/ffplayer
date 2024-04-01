@@ -27,7 +27,7 @@ int FrameQueue::rindex_shown() {
 // 找到可写入帧
 Frame* FrameQueue::peek_writable() {
     std::unique_lock lock(m_mutex);
-    while (m_size >= m_max_size && m_pktq->request_aborted()) {
+    while (m_size >= m_max_size && !m_pktq->request_aborted()) {
         m_cond.wait(lock);
     }
     if (m_pktq->request_aborted()) {
