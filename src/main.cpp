@@ -13,5 +13,6 @@ int main(int argc, char *argv[]) {
     player.start();
 
     EventLoop loop;
+    loop.addEvent(USER_EVENT_TIMER, std::bind(&Player::show, player));
     return loop.run();
 }

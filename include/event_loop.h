@@ -6,6 +6,9 @@
 
 #include <SDL.h>
 
+#define USER_EVENT_BASE  (SDL_USEREVENT+100)
+#define USER_EVENT_TIMER (USER_EVENT_BASE+10)
+
 class EventLoop {
 public:
     EventLoop();

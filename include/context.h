@@ -12,6 +12,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswresample/swresample.h>
+#include <libswscale/swscale.h>
 
 #ifdef __cplusplus
 }
@@ -57,6 +58,9 @@ private:
     AVRational      video_frame_rate;          // 视频帧率
     FrameQueue      video_frame_queue{ &video_packet_queue, VIDEO_FRAME_QUEUE_SIZE, 1 }; // 视频帧队列
     double          video_frame_timer = 0.0; // 记录最后一帧视频播放的时刻
+    SwsContext     *video_sws_ctx = nullptr;
+    uint8_t        *video_data[4] = { nullptr };
+    int             video_linesize[4] = { 0 };
 
     int             subtitle_index = -1;          // 字幕流索引
     AVCodecContext *subtitle_codec_ctx = nullptr; // 字幕流解码器上下文
@@ -88,9 +92,10 @@ private:
     // 音视频同步
     Clock *master_clock = &audio_clock;
 
-    double frame_last_returned_time; // 用于记录上一帧在解码后被返回的时间戳
-    double frame_last_filter_delay;  // 用于记录上一帧通过滤镜链后的延迟时间
+    double frame_last_returned_time = 0.0; // 用于记录上一帧在解码后被返回的时间戳
+    double frame_last_filter_delay = 0.0;  // 用于记录上一帧通过滤镜链后的延迟时间
     int frame_drops_early = 0; // 统计被丢弃的时钟有误差的包，放入frame队列之前丢弃
+    int frame_drops_late = 0;
 
 
     AVInputFormat *iformat = nullptr;

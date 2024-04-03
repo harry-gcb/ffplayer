@@ -44,9 +44,8 @@ int AudioPlayer::open() {
     // m_audio_hw_buf_size = optained.size;
     m_audio_hw_buf_size = 2048;
     m_bytes_per_sec = av_samples_get_buffer_size(nullptr, desired.channels, desired.freq, AV_SAMPLE_FMT_S16, 1);
-    spdlog::info("channels={}, freq={}, format={}, silence={}, samples={}", desired.channels, desired.freq, desired.format, desired.silence, desired.samples);
-    spdlog::info("channels={}, freq={}, format={}, silence={}, samples={}", optained.channels, optained.freq, optained.format, optained.silence, optained.samples);
-    spdlog::info("m_bytes_per_sec={}", m_bytes_per_sec);
+    spdlog::info("open audio player, channels={}, freq={}, format={}, silence={}, samples={}, m_bytes_per_sec={}",
+        desired.channels, desired.freq, desired.format, desired.silence, desired.samples, m_bytes_per_sec);
     return m_audio_dev_id;
 }
 
@@ -99,6 +98,7 @@ void AudioPlayer::run(Uint8* stream, int len) {
 
     int audio_write_buf_size = m_current_audio_buf_size - m_current_audio_buf_index;
     if (!isnan(m_current_audio_clock)) {
+        // spdlog::info("pts={:.4f}, serial={}, time={:.4f}", m_current_audio_clock - (double)(2 * m_audio_hw_buf_size + audio_write_buf_size) / m_bytes_per_sec, m_current_audio_clock_serial, audio_callback_time / 1000000.0);
         m_ctx->audio_clock.set_at(m_current_audio_clock - (double)(2 * m_audio_hw_buf_size + audio_write_buf_size) / m_bytes_per_sec, m_current_audio_clock_serial, audio_callback_time / 1000000.0);
     }
     return;
@@ -161,8 +161,7 @@ int AudioPlayer::get_audio_data() {
         
         m_current_audio_buf_size = av_samples_get_buffer_size(nullptr, af->frame->ch_layout.nb_channels,
             len, AV_SAMPLE_FMT_S16, 1);
-    }
-    else {
+    } else {
         int data_size = av_samples_get_buffer_size(nullptr,
             af->frame->ch_layout.nb_channels,
             af->frame->nb_samples,
@@ -178,7 +177,7 @@ int AudioPlayer::get_audio_data() {
     // TODO af->frame->format != audio_src.fmt
 
     // TODO swr_ctx
-
+    double audio_clock0 = m_current_audio_clock;
     if (!isnan(af->pts)) {
         m_current_audio_clock = af->pts + (double)af->frame->nb_samples / af->frame->sample_rate;
     }
@@ -190,5 +189,8 @@ int AudioPlayer::get_audio_data() {
     //spdlog::info("audio:%d ch:%d fmt:%s layout:%s serial:%d to rate:%d ch:%d fmt:%s layout:%s serial:%d\n",
     //    is->audio_filter_src.freq, is->audio_filter_src.ch_layout.nb_channels, av_get_sample_fmt_name(is->audio_filter_src.fmt), buf1, last_serial,
     //    frame->sample_rate, frame->ch_layout.nb_channels, av_get_sample_fmt_name(frame->format), buf2, is->auddec.pkt_serial);
+
+    // spdlog::info("audio: delay={:.3f} clock={:.3f} clock0={:.3f}", m_current_audio_clock - m_last_audio_clock, m_current_audio_clock, audio_clock0);
+    m_last_audio_clock = m_current_audio_clock;
     return 0;
 }

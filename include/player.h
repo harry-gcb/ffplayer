@@ -15,8 +15,8 @@ public:
     Player();
 
     int open(const char *filename);
-
     void start();
+    void show();
 private:
     std::shared_ptr<Context> m_ctx;   
     std::shared_ptr<Demuxer> m_demuxer;

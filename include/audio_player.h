@@ -38,6 +38,7 @@ private:
     int m_current_audio_buf_index = 0;
     int m_current_audio_clock_serial = 0;
     double m_current_audio_clock = 0.0;
+    double m_last_audio_clock = 0.0;
     
 };
 

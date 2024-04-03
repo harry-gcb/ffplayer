@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 
 static EventLoop *gInstance = nullptr;
-static const int SDL_APP_EVENT_TIMEOUT = 10;
+static const int SDL_APP_EVENT_TIMEOUT = 1000;
 
 EventLoop::EventLoop() {
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -21,6 +21,10 @@ int EventLoop::run() {
         int timeout = SDL_WaitEventTimeout(&event, SDL_APP_EVENT_TIMEOUT);
         if (0 == timeout) {
             // spdlog::info("SDL_WaitEventTimeout timeout={}", timeout);
+            SDL_Event event;
+            event.type = USER_EVENT_TIMER;
+            event.user.data1 = nullptr;
+            SDL_PushEvent(&event);
             continue;
         }
         switch (event.type) {

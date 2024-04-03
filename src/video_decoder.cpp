@@ -60,16 +60,18 @@ bool VideoDecoder::drop_frame(AVFrame *frame) {
     //    则不丢弃失去同步的视频帧，否则将丢弃失去同步的视频帧。
     // 2) 当命令行带"-framedrop"选项时，framedrop值为1，无论何种同步方式，均丢弃失去同步的视频帧。
     // 3) 当命令行带"-noframedrop"选项时，framedrop值为0，无论何种同步方式，均不丢弃失去同步的视频帧。
-    if (framedrop > 0 || (framedrop && m_ctx->master_clock->sync_type() != SYNC_TYPE_VIDEO) && frame->pts != AV_NOPTS_VALUE) {
+    if ((framedrop > 0 || (framedrop && m_ctx->master_clock->sync_type() != SYNC_TYPE_VIDEO)) && frame->pts != AV_NOPTS_VALUE) {
         double diff = dpts - m_ctx->master_clock->get();
         if (!isnan(diff) &&
             fabs(diff) < AV_NOSYNC_THRESHOLD &&
             diff - m_ctx->frame_last_filter_delay < 0 &&
             m_pkt_serial == m_ctx->video_clock.serial() &&
             m_ctx->video_packet_queue.count())
+        {
             m_ctx->frame_drops_early++;
             av_frame_unref(frame); // 视频帧失去同步则直接扔掉
             return true;
+        }
     }
     return false;
 }
@@ -79,10 +81,14 @@ bool VideoDecoder::enqueue_frame(AVFrame* frame) {
     if (!vp) {
         return false;
     }
-    vp->uploaded = 0;
 
-    vp->pts = frame->pts;
-    vp->duration = frame->duration;
+
+    AVRational tb = m_ctx->video_stream->time_base;
+    AVRational frame_rate = av_guess_frame_rate(m_ctx->fmt_ctx, m_ctx->video_stream, NULL);
+
+    vp->uploaded = 0;
+    vp->pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);// frame->pts;
+    vp->duration = (frame_rate.num && frame_rate.den ? av_q2d(AVRational{ frame_rate.den, frame_rate.num }) : 0);//frame->duration;
     vp->pos = frame->pkt_pos;
     vp->serial = m_pkt_serial;
 
