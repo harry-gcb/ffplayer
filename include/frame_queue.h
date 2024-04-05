@@ -25,6 +25,7 @@ public:
 
     void lock();
     void unlock();
+    void wakeup();
 private:
     Frame m_queue[FRAME_QUEUE_SIZE] = { 0 };
     PacketQueue *m_pktq = nullptr; // 指向对应的packet_queue

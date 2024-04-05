@@ -73,7 +73,9 @@ private:
 
     double max_frame_duration = 0.0; // 一帧的最大间隔
 
-    std::atomic<bool> paused = false;      // 暂停/恢复播放
+    std::atomic<bool> paused = false; // 暂停/恢复播放
+    std::atomic<bool> muted = false;  // 静音
+    std::atomic<bool> stop = false;   // 停止播放
 
     // seek操作
     std::atomic<bool> seek_req = false;    // seek操作
@@ -81,7 +83,7 @@ private:
     int64_t seek_pos = 0;
     int64_t seek_rel = 0;
 
-    bool muted = false; // 静音
+    
     int audio_volume = 100; // 音量控制
 
 

@@ -91,3 +91,8 @@ void FrameQueue::lock() {
 void FrameQueue::unlock() {
     m_mutex.unlock();
 }
+
+void FrameQueue::wakeup() {
+    std::lock_guard lock(m_mutex);
+    m_cond.notify_one();
+}

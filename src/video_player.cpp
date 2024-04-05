@@ -115,7 +115,13 @@ int VideoPlayer::start() {
 }
 
 int VideoPlayer::close() {
+    SDL_RemoveTimer(m_timer_id);
     return 0;
+}
+
+void VideoPlayer::toggle_full_screen() {
+    m_is_full_screen = !m_is_full_screen;
+    SDL_SetWindowFullscreen(m_window, m_is_full_screen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
 int VideoPlayer::run(int internal) {
@@ -202,11 +208,15 @@ retry:
 }
 
 void VideoPlayer::display() {
+    int ret = 0;
+    ret = SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
 
-    SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
-    SDL_RenderClear(m_renderer);
+    ret = SDL_RenderClear(m_renderer);
     render();
     SDL_RenderPresent(m_renderer);
+    if (ret != 0) {
+        spdlog::error("ret={}, error={}", ret, SDL_GetError());
+    }
 }
 
 void VideoPlayer::render() {
@@ -236,51 +246,57 @@ void VideoPlayer::render() {
     sws_scale(m_ctx->video_sws_ctx, (const uint8_t* const*)vp->frame->data, vp->frame->linesize, 0,
         vp->frame->height, m_ctx->video_data, m_ctx->video_linesize);
 
-        Uint32 sdl_pix_fmt = SDL_PIXELFORMAT_UNKNOWN;
-        SDL_BlendMode sdl_blendmode = SDL_BLENDMODE_NONE;
-        get_sdl_pix_fmt_and_blendmode(vp->frame->format, sdl_pix_fmt, sdl_blendmode);
-        create_texture(sdl_pix_fmt, SDL_WINDOW_DEFAULT_WIDTH, SDL_WINDOW_DEFAULT_HEIGHT, sdl_blendmode);
-        switch (sdl_pix_fmt) {
-        case SDL_PIXELFORMAT_IYUV:
-            if (m_ctx->video_linesize[0] > 0 &&
-                m_ctx->video_linesize[1] > 0 &&
-                m_ctx->video_linesize[2] > 0) {
-                SDL_UpdateYUVTexture(m_texture, nullptr,
-                    m_ctx->video_data[0], m_ctx->video_linesize[0],
-                    m_ctx->video_data[1], m_ctx->video_linesize[1],
-                    m_ctx->video_data[2], m_ctx->video_linesize[2]);
-            }
-            else if (m_ctx->video_linesize[0] < 0 && 
-                     m_ctx->video_linesize[1] < 0 && 
-                     m_ctx->video_linesize[2] < 0) {
-                SDL_UpdateYUVTexture(m_texture, nullptr, 
-                    m_ctx->video_data[0] + m_ctx->video_linesize[0] * (SDL_WINDOW_DEFAULT_HEIGHT - 1), -m_ctx->video_linesize[0],
-                    m_ctx->video_data[1] + m_ctx->video_linesize[1] * (AV_CEIL_RSHIFT(SDL_WINDOW_DEFAULT_HEIGHT, 1) - 1), -m_ctx->video_linesize[1],
-                    m_ctx->video_data[2] + m_ctx->video_linesize[2] * (AV_CEIL_RSHIFT(SDL_WINDOW_DEFAULT_HEIGHT, 1) - 1), -m_ctx->video_linesize[2]);
-            }
-            else {
-                spdlog::error("Mixed negative and positive linesizes are not supported");
-            }
-            break;
-        default:
-            if (m_ctx->video_linesize[0] < 0) {
-                SDL_UpdateTexture(m_texture, nullptr,
-                    m_ctx->video_data[0] + m_ctx->video_linesize[0] * (SDL_WINDOW_DEFAULT_HEIGHT - 1), -m_ctx->video_linesize[0]);
-            }
-            else {
-                SDL_UpdateTexture(m_texture, nullptr, m_ctx->video_data[0], m_ctx->video_linesize[0]);
-            }
-            break;
+    int ret = 0;
+    Uint32 sdl_pix_fmt = SDL_PIXELFORMAT_UNKNOWN;
+    SDL_BlendMode sdl_blendmode = SDL_BLENDMODE_NONE;
+    get_sdl_pix_fmt_and_blendmode(vp->frame->format, sdl_pix_fmt, sdl_blendmode);
+    create_texture(sdl_pix_fmt, SDL_WINDOW_DEFAULT_WIDTH, SDL_WINDOW_DEFAULT_HEIGHT, sdl_blendmode);
+    switch (sdl_pix_fmt) {
+    case SDL_PIXELFORMAT_IYUV:
+        if (m_ctx->video_linesize[0] > 0 &&
+            m_ctx->video_linesize[1] > 0 &&
+            m_ctx->video_linesize[2] > 0) {
+            ret = SDL_UpdateYUVTexture(m_texture, nullptr,
+                  m_ctx->video_data[0], m_ctx->video_linesize[0],
+                  m_ctx->video_data[1], m_ctx->video_linesize[1],
+                  m_ctx->video_data[2], m_ctx->video_linesize[2]);
         }
-        vp->uploaded = 1;
+        else if (m_ctx->video_linesize[0] < 0 && 
+                    m_ctx->video_linesize[1] < 0 && 
+                    m_ctx->video_linesize[2] < 0) {
+            ret = SDL_UpdateYUVTexture(m_texture, nullptr, 
+                  m_ctx->video_data[0] + m_ctx->video_linesize[0] * (SDL_WINDOW_DEFAULT_HEIGHT - 1), -m_ctx->video_linesize[0],
+                  m_ctx->video_data[1] + m_ctx->video_linesize[1] * (AV_CEIL_RSHIFT(SDL_WINDOW_DEFAULT_HEIGHT, 1) - 1), -m_ctx->video_linesize[1],
+                  m_ctx->video_data[2] + m_ctx->video_linesize[2] * (AV_CEIL_RSHIFT(SDL_WINDOW_DEFAULT_HEIGHT, 1) - 1), -m_ctx->video_linesize[2]);
+        }
+        else {
+            spdlog::error("Mixed negative and positive linesizes are not supported");
+        }
+        break;
+    default:
+        if (m_ctx->video_linesize[0] < 0) {
+            ret = SDL_UpdateTexture(m_texture, nullptr,
+                    m_ctx->video_data[0] + m_ctx->video_linesize[0] * (SDL_WINDOW_DEFAULT_HEIGHT - 1), -m_ctx->video_linesize[0]);
+        }
+        else {
+            ret = SDL_UpdateTexture(m_texture, nullptr, m_ctx->video_data[0], m_ctx->video_linesize[0]);
+        }
+        break;
+    }
+    if (ret != 0) {
+        spdlog::error("ret={}, error={}", ret, SDL_GetError());
+    }
+    vp->uploaded = 1;
 
-        SDL_Rect rect;
-        rect.x = 0;
-        rect.y = 0;
-        rect.w = SDL_WINDOW_DEFAULT_WIDTH;
-        rect.h = SDL_WINDOW_DEFAULT_HEIGHT;
-        SDL_RenderCopy(m_renderer, m_texture, nullptr, &rect);
-    
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = SDL_WINDOW_DEFAULT_WIDTH;
+    rect.h = SDL_WINDOW_DEFAULT_HEIGHT;
+    ret = SDL_RenderCopy(m_renderer, m_texture, nullptr, &rect);
+    if (ret != 0) {
+        spdlog::error("ret={}, error={}", ret, SDL_GetError());
+    }
 }
 
 void VideoPlayer::create_texture(Uint32 format, int width, int height, SDL_BlendMode blendmode) {

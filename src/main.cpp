@@ -14,5 +14,9 @@ int main(int argc, char *argv[]) {
 
     EventLoop loop;
     loop.addEvent(USER_EVENT_TIMER, std::bind(&Player::show, player));
+    loop.addEvent(SDLK_SPACE, std::bind(&Player::toggle_pause, player));
+    loop.addEvent(SDLK_m, std::bind(&Player::toggle_mute, player));
+    loop.addEvent(SDLK_f, std::bind(&Player::toggle_full_screen, player));
+    loop.addEvent(SDL_QUIT, std::bind(&Player::close, player));
     return loop.run();
 }

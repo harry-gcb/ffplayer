@@ -16,7 +16,8 @@ public:
     int open();
     int start();
     int close();
-    
+
+    void toggle_full_screen();
 private:
     int run(int interval);
     double refresh();
@@ -33,6 +34,8 @@ private:
     SDL_Window *m_window = nullptr;
     SDL_Renderer *m_renderer = nullptr;
     SDL_Texture* m_texture = nullptr;
+
+    std::atomic<bool> m_is_full_screen = false;
 };
 
 #endif

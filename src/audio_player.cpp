@@ -60,6 +60,7 @@ int AudioPlayer::stop() {
 }
 
 int AudioPlayer::close() {
+    stop();
     return 0;
 }
 
@@ -70,7 +71,8 @@ void AudioPlayer::run(Uint8* stream, int len) {
         // audio buf缓存已经读完
         if (m_current_audio_buf_index >= m_current_audio_buf_size) {
             if (get_audio_data() < 0) {
-                continue;
+                m_current_audio_buf_data = nullptr;
+                m_current_audio_buf_size = SDL_AUDIO_MIN_BUFFER_SIZE;
             }
             // TODO is->show_mode != SHOW_MODE_VIDEO
             // 设置buf大小以及读写位置
@@ -92,7 +94,7 @@ void AudioPlayer::run(Uint8* stream, int len) {
             }
         }
         len -= len1;
-        stream += len;
+        stream += len1;
         m_current_audio_buf_index += len1;
     }
 
@@ -105,6 +107,10 @@ void AudioPlayer::run(Uint8* stream, int len) {
 }
 
 int AudioPlayer::get_audio_data() {
+    m_current_audio_buf_index = 0;
+    if (m_ctx->paused) {
+        return -1;
+    }
     Frame *af = nullptr;
     do {
         af = m_ctx->audio_frame_queue.peek_readable();
@@ -185,7 +191,6 @@ int AudioPlayer::get_audio_data() {
         m_current_audio_clock = NAN;
     }
     m_current_audio_clock_serial = af->serial;
-    m_current_audio_buf_index = 0;
     //spdlog::info("audio:%d ch:%d fmt:%s layout:%s serial:%d to rate:%d ch:%d fmt:%s layout:%s serial:%d\n",
     //    is->audio_filter_src.freq, is->audio_filter_src.ch_layout.nb_channels, av_get_sample_fmt_name(is->audio_filter_src.fmt), buf1, last_serial,
     //    frame->sample_rate, frame->ch_layout.nb_channels, av_get_sample_fmt_name(frame->format), buf2, is->auddec.pkt_serial);

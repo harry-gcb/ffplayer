@@ -33,6 +33,35 @@ void Player::start() {
     m_video_player->start();
 }
 
+void Player::close() {
+    m_audio_player->close();
+    m_video_player->close();
+    m_audio_decoder->close();
+    m_video_decoder->close();
+    m_demuxer->close();
+    SDL_Quit();
+}
+
+void Player::toggle_pause() {
+    m_ctx->paused = !m_ctx->paused;
+}
+
+void Player::toggle_mute() {
+    m_ctx->muted = !m_ctx->muted;
+}
+
+void Player::toggle_full_screen() {
+    m_video_player->toggle_full_screen();
+}
+
+bool Player::is_paused() const {
+    return m_ctx->paused;
+}
+
+bool Player::is_muted() const {
+    return !m_ctx->muted;
+}
+
 void Player::show() {
     spdlog::info("frame_drops_early={}, frame_drops_late={}", m_ctx->frame_drops_early, m_ctx->frame_drops_late);
 }

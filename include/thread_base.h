@@ -6,8 +6,8 @@
 
 class ThreadBase {
 public:
-    ThreadBase() = default;
-    virtual ~ThreadBase() = default;
+    ThreadBase();
+    virtual ~ThreadBase();
 
     void start();
     void stop();

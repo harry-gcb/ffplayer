@@ -96,3 +96,9 @@ int PacketQueue::serial() {
 bool PacketQueue::request_aborted() {
     return m_abort_request;
 }
+
+void PacketQueue::abort_request() {
+    std::lock_guard<std::mutex> lock{ m_mutex };
+    m_abort_request = true;
+    m_cond.notify_one();
+}

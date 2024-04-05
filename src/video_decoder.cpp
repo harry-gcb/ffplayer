@@ -22,7 +22,7 @@ void VideoDecoder::run() {
 void VideoDecoder::decode_loop() {
     int got_frame = 0;
     AVFrame *frame = av_frame_alloc();
-    for (;;) {
+    while (!m_stop) {
         got_frame = decode(m_ctx->video_codec_ctx, frame);
         if (got_frame < 0) {
             break;
@@ -81,7 +81,6 @@ bool VideoDecoder::enqueue_frame(AVFrame* frame) {
     if (!vp) {
         return false;
     }
-
 
     AVRational tb = m_ctx->video_stream->time_base;
     AVRational frame_rate = av_guess_frame_rate(m_ctx->fmt_ctx, m_ctx->video_stream, NULL);

@@ -16,7 +16,16 @@ public:
 
     int open(const char *filename);
     void start();
+    void close();
+    
     void show();
+
+    void toggle_pause();
+    void toggle_mute();
+    void toggle_full_screen();
+
+    bool is_paused() const;
+    bool is_muted() const;
 private:
     std::shared_ptr<Context> m_ctx;   
     std::shared_ptr<Demuxer> m_demuxer;

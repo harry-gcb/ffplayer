@@ -35,6 +35,10 @@ int Decoder::open() {
 }
 
 int Decoder::close() {
+    m_queue->abort_request();
+    m_ctx->audio_frame_queue.wakeup();
+    m_ctx->video_frame_queue.wakeup();
+    stop();
     return _close();
 }
 

@@ -21,28 +21,36 @@ int EventLoop::run() {
         int timeout = SDL_WaitEventTimeout(&event, SDL_APP_EVENT_TIMEOUT);
         if (0 == timeout) {
             // spdlog::info("SDL_WaitEventTimeout timeout={}", timeout);
-            SDL_Event event;
-            event.type = USER_EVENT_TIMER;
-            event.user.data1 = nullptr;
-            SDL_PushEvent(&event);
+            // 
+            //SDL_Event event;
+            //event.type = USER_EVENT_TIMER;
+            //event.user.data1 = nullptr;
+            //SDL_PushEvent(&event);
             continue;
         }
         switch (event.type) {
-            case SDL_QUIT:
-                SDL_Quit();
-                return 0;
             case SDL_USEREVENT:
             {
                 std::function<void()> cb = *(std::function<void()>*)event.user.data1;
                 cb();
             }
             break;
+            case SDL_KEYDOWN:
+            {
+                SDL_Event evt;
+                evt.type = event.key.keysym.sym;
+                SDL_PushEvent(&evt);
+            }
             default:
             {
                 auto it = m_eventMap.find(event.type);
                 if (it != m_eventMap.end()) {
                     auto cb = it->second;
                     cb(&event);
+                }
+                if (event.type == SDL_QUIT) {
+                    spdlog::info("event.type is SDL_QUIT");
+                    return 0;
                 }
             }
             break;

@@ -29,6 +29,7 @@ public:
     int size() const;  // 队列中packet占用的内存大小
     void flush();
     void destroy();
+    void abort_request();
 
     int  serial();
     bool request_aborted();

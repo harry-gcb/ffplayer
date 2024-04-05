@@ -35,7 +35,7 @@ void AudioDecoder::decode_loop() {
         spdlog::error("av_frame_alloc failed");
         return;
     }
-    for (;;) {
+    while (!m_stop) {
         got_frame = decode(m_ctx->audio_codec_ctx, frame);
         if (got_frame < 0) {
             break;
