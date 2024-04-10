@@ -30,7 +30,7 @@ void Player::start() {
     m_audio_decoder->start();
     m_video_decoder->start();
     m_audio_player->start();
-    m_video_player->start();
+    // m_video_player->start();
 }
 
 void Player::close() {
@@ -44,14 +44,23 @@ void Player::close() {
 
 void Player::toggle_pause() {
     m_ctx->paused = !m_ctx->paused;
+    m_ctx->m_pause_cond.notify_one();
 }
 
 void Player::toggle_mute() {
-    m_ctx->muted = !m_ctx->muted;
+    m_audio_player->toggle_mute();
 }
 
 void Player::toggle_full_screen() {
     m_video_player->toggle_full_screen();
+}
+
+void Player::update_width_height(int width, int height) {
+    m_video_player->update_width_height(width, height);
+}
+
+void Player::force_refresh() {
+    m_ctx->force_refresh = 1;
 }
 
 bool Player::is_paused() const {
@@ -59,9 +68,29 @@ bool Player::is_paused() const {
 }
 
 bool Player::is_muted() const {
-    return !m_ctx->muted;
+    return m_audio_player->is_muted();
 }
 
-void Player::show() {
-    spdlog::info("frame_drops_early={}, frame_drops_late={}", m_ctx->frame_drops_early, m_ctx->frame_drops_late);
+void Player::refresh() {
+    // spdlog::info("frame_drops_early={}, frame_drops_late={}", m_ctx->frame_drops_early, m_ctx->frame_drops_late);
+    m_video_player->run(0);
+}
+
+void Player::volume_up(int volume) {
+    m_audio_player->update_volume(volume);
+}
+void Player::volume_down(int volume) {
+    m_audio_player->update_volume(-volume);
+}
+void Player::seek_forward(double incr, bool seek_by_bytes) {
+    m_demuxer->seek(incr, seek_by_bytes);
+}
+void Player::seek_backward(double incr, bool seek_by_bytes) {
+    m_demuxer->seek(incr, seek_by_bytes);
+}
+void Player::speed_up(double speed) {
+
+}
+void Player::speed_down(double speed) {
+
 }

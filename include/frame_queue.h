@@ -18,10 +18,11 @@ public:
 
     Frame *peek_last();
     Frame *peek();
-    Frame* peek_next();
+    Frame *peek_next();
 
     int nb_remaining();
     int rindex_shown();
+    int64_t last_pos();
 
     void lock();
     void unlock();

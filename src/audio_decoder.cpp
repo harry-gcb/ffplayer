@@ -38,14 +38,13 @@ void AudioDecoder::decode_loop() {
     while (!m_stop) {
         got_frame = decode(m_ctx->audio_codec_ctx, frame);
         if (got_frame < 0) {
-            break;
+            continue;
+        }
+        if (m_ctx->audio_packet_queue.serial() != m_pkt_serial) {
+            continue;
         }
         if (!enqueue_frame(frame)) {
-            break;
-        }
-
-        if (m_ctx->audio_packet_queue.serial() != m_pkt_serial) {
-            break;
+            continue;
         }
     };
 

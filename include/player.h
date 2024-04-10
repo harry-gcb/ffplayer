@@ -9,6 +9,7 @@
 #include "video_player.h"
 #include "audio_player.h"
 
+#define SEEK_BY_BYTES 0
 
 class Player {
 public:
@@ -18,11 +19,20 @@ public:
     void start();
     void close();
     
-    void show();
+    void refresh();
 
     void toggle_pause();
     void toggle_mute();
     void toggle_full_screen();
+    void update_width_height(int width, int height);
+    void force_refresh();
+
+    void volume_up(int volume);
+    void volume_down(int volume);
+    void seek_forward(double incr, bool seek_by_bytes = SEEK_BY_BYTES);
+    void seek_backward(double incr, bool seek_by_bytes = SEEK_BY_BYTES);
+    void speed_up(double speed);
+    void speed_down(double speed);
 
     bool is_paused() const;
     bool is_muted() const;

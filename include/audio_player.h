@@ -11,6 +11,10 @@ extern "C" {
 
 #include "context.h"
 
+#define MIN_VOLUME_VALUE 0
+#define DEFAULT_VOLUME_VALUE 64
+#define MAX_VOLUME_VALUE 128
+
 class AudioPlayer {
     friend void callback(void* opaque, Uint8* steram, int len);
 public:
@@ -19,13 +23,14 @@ public:
     int start();
     int stop();
     int close();
+
+    void toggle_mute();         // æ≤“Ù
+    void update_volume(int volume); // “Ù¡øøÿ÷∆
+
+    bool is_muted() const;
 private:
     void run(Uint8* steram, int len);
-
-
     int get_audio_data();
-
-
 private:
     std::shared_ptr<Context> m_ctx;
     SDL_AudioDeviceID m_audio_dev_id = -1;
@@ -39,6 +44,9 @@ private:
     int m_current_audio_clock_serial = 0;
     double m_current_audio_clock = 0.0;
     double m_last_audio_clock = 0.0;
+
+    std::atomic<int> m_volume = DEFAULT_VOLUME_VALUE;
+    std::atomic<bool> m_muted = false;
     
 };
 

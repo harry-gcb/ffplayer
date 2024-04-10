@@ -3,17 +3,14 @@
 
 #include <map>
 #include <functional>
-
 #include <SDL.h>
-
-#define USER_EVENT_BASE  (SDL_USEREVENT+100)
-#define USER_EVENT_TIMER (USER_EVENT_BASE+10)
+#include "player.h"
 
 class EventLoop {
 public:
     EventLoop();
 
-    int run();
+    int run(Player &player);
     void quit();
     void addEvent(int type, const std::function<void(SDL_Event*)> &cb);
 

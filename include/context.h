@@ -58,9 +58,6 @@ private:
     AVRational      video_frame_rate;          // 视频帧率
     FrameQueue      video_frame_queue{ &video_packet_queue, VIDEO_FRAME_QUEUE_SIZE, 1 }; // 视频帧队列
     double          video_frame_timer = 0.0; // 记录最后一帧视频播放的时刻
-    SwsContext     *video_sws_ctx = nullptr;
-    uint8_t        *video_data[4] = { nullptr };
-    int             video_linesize[4] = { 0 };
 
     int             subtitle_index = -1;          // 字幕流索引
     AVCodecContext *subtitle_codec_ctx = nullptr; // 字幕流解码器上下文
@@ -73,8 +70,9 @@ private:
 
     double max_frame_duration = 0.0; // 一帧的最大间隔
 
+    std::mutex m_pause_mutex;
+    std::condition_variable m_pause_cond;
     std::atomic<bool> paused = false; // 暂停/恢复播放
-    std::atomic<bool> muted = false;  // 静音
     std::atomic<bool> stop = false;   // 停止播放
 
     // seek操作
@@ -82,10 +80,6 @@ private:
     int seek_flags = 0;
     int64_t seek_pos = 0;
     int64_t seek_rel = 0;
-
-    
-    int audio_volume = 100; // 音量控制
-
 
     int eof = 0;
     // 强制刷新视频

@@ -33,16 +33,18 @@ void VideoDecoder::decode_loop() {
         }
         // TODO add video filters, filter may add while 
         // TODO 设置 frame_last_filter_delay
-        
-        if (!enqueue_frame(frame)) {
-            break;
-        }
+
         // av_frame_unref(frame);
         if (m_ctx->video_packet_queue.serial() != m_pkt_serial) {
             spdlog::warn("the serial in video packet queue and decoder is different, serial={}, serial={}", 
                 m_ctx->video_packet_queue.serial(), m_pkt_serial);
-            break;
+            continue;
         }
+
+        if (!enqueue_frame(frame)) {
+            continue;
+        }
+
     }
     av_frame_free(&frame);
     return ;

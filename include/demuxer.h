@@ -11,6 +11,7 @@ public:
     ~Demuxer();
     int open();
     int close();
+    void seek(double incr, int seek_by_bytes);
     virtual void run() override;
 private:
     void demux_loop();

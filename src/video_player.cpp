@@ -14,9 +14,6 @@ extern "C" {
 }
 #endif
 
-#define SDL_WINDOW_DEFAULT_WIDTH  (1080)
-#define SDL_WINDOW_DEFAULT_HEIGHT (720)
-
 static const struct TextureFormatEntry {
     enum AVPixelFormat format;
     int texture_fmt;
@@ -95,7 +92,6 @@ int VideoPlayer::open() {
     }
     SDL_RendererInfo info;
     SDL_GetRendererInfo(m_renderer, &info);
-    spdlog::info("open video player: name={}, num_texture_formats={}", info.name, info.num_texture_formats);
     return 0;
 }
 
@@ -119,9 +115,15 @@ int VideoPlayer::close() {
     return 0;
 }
 
+void VideoPlayer::update_width_height(int width, int height) {
+    m_dst_width = width;
+    m_dst_height = height;
+}
+
 void VideoPlayer::toggle_full_screen() {
     m_is_full_screen = !m_is_full_screen;
     SDL_SetWindowFullscreen(m_window, m_is_full_screen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+    m_ctx->force_refresh = 1;
 }
 
 int VideoPlayer::run(int internal) {
@@ -208,15 +210,10 @@ retry:
 }
 
 void VideoPlayer::display() {
-    int ret = 0;
-    ret = SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
-
-    ret = SDL_RenderClear(m_renderer);
+    SDL_RenderClear(m_renderer);
+    SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
     render();
     SDL_RenderPresent(m_renderer);
-    if (ret != 0) {
-        spdlog::error("ret={}, error={}", ret, SDL_GetError());
-    }
 }
 
 void VideoPlayer::render() {
@@ -226,83 +223,89 @@ void VideoPlayer::render() {
         return;
     }
 
-    if (!m_ctx->video_sws_ctx) {
-        m_ctx->video_sws_ctx = sws_getContext(
-            vp->frame->width, vp->frame->height, static_cast<AVPixelFormat>(vp->frame->format),
-            SDL_WINDOW_DEFAULT_WIDTH, SDL_WINDOW_DEFAULT_HEIGHT, static_cast<AVPixelFormat>(vp->frame->format),
+    int size = av_image_get_buffer_size(static_cast<AVPixelFormat>(vp->frame->format), vp->frame->width, vp->frame->height, 1);
+
+
+    if (!m_sws_ctx || m_dst_width != m_width || m_dst_height != m_height) {
+        if (m_sws_ctx) {
+            sws_freeContext(m_sws_ctx);
+            m_sws_ctx = nullptr;
+        }
+        m_sws_ctx = sws_getContext(vp->frame->width, vp->frame->height, static_cast<AVPixelFormat>(vp->frame->format),
+            m_dst_width, m_dst_height, static_cast<AVPixelFormat>(vp->frame->format),
             SWS_BILINEAR, NULL, NULL, NULL);
-        if (!m_ctx->video_sws_ctx) {
+        if (!m_sws_ctx) {
             spdlog::error("sws_getContext failed");
             return;
         }
-        int ret = av_image_alloc(m_ctx->video_data, m_ctx->video_linesize,
-            SDL_WINDOW_DEFAULT_WIDTH, SDL_WINDOW_DEFAULT_HEIGHT, static_cast<AVPixelFormat>(vp->frame->format), 1);
-        if (ret < 0) {
+
+        if (m_data[0] != nullptr) {
+            av_freep(&m_data[0]);
+        }
+        m_data_size = av_image_alloc(m_data, m_linesize,
+            m_dst_width, m_dst_height, static_cast<AVPixelFormat>(vp->frame->format), 1);
+        if (m_data_size < 0) {
             spdlog::error("av_image_alloc failed");
             return;
         }
+        m_width = m_dst_width;
+        m_height = m_dst_height;
     }
 
-    sws_scale(m_ctx->video_sws_ctx, (const uint8_t* const*)vp->frame->data, vp->frame->linesize, 0,
-        vp->frame->height, m_ctx->video_data, m_ctx->video_linesize);
+    sws_scale(m_sws_ctx, (const uint8_t* const*)vp->frame->data, vp->frame->linesize, 0,
+        vp->frame->height, m_data, m_linesize);
 
     int ret = 0;
     Uint32 sdl_pix_fmt = SDL_PIXELFORMAT_UNKNOWN;
     SDL_BlendMode sdl_blendmode = SDL_BLENDMODE_NONE;
     get_sdl_pix_fmt_and_blendmode(vp->frame->format, sdl_pix_fmt, sdl_blendmode);
-    create_texture(sdl_pix_fmt, SDL_WINDOW_DEFAULT_WIDTH, SDL_WINDOW_DEFAULT_HEIGHT, sdl_blendmode);
+    create_texture(sdl_pix_fmt, m_width, m_height, sdl_blendmode);
     switch (sdl_pix_fmt) {
     case SDL_PIXELFORMAT_IYUV:
-        if (m_ctx->video_linesize[0] > 0 &&
-            m_ctx->video_linesize[1] > 0 &&
-            m_ctx->video_linesize[2] > 0) {
+        if (m_linesize[0] > 0 &&
+            m_linesize[1] > 0 &&
+            m_linesize[2] > 0) {
             ret = SDL_UpdateYUVTexture(m_texture, nullptr,
-                  m_ctx->video_data[0], m_ctx->video_linesize[0],
-                  m_ctx->video_data[1], m_ctx->video_linesize[1],
-                  m_ctx->video_data[2], m_ctx->video_linesize[2]);
+                  m_data[0], m_linesize[0],
+                  m_data[1], m_linesize[1],
+                  m_data[2], m_linesize[2]);
+
         }
-        else if (m_ctx->video_linesize[0] < 0 && 
-                    m_ctx->video_linesize[1] < 0 && 
-                    m_ctx->video_linesize[2] < 0) {
+        else if (m_linesize[0] < 0 && 
+                    m_linesize[1] < 0 && 
+                    m_linesize[2] < 0) {
             ret = SDL_UpdateYUVTexture(m_texture, nullptr, 
-                  m_ctx->video_data[0] + m_ctx->video_linesize[0] * (SDL_WINDOW_DEFAULT_HEIGHT - 1), -m_ctx->video_linesize[0],
-                  m_ctx->video_data[1] + m_ctx->video_linesize[1] * (AV_CEIL_RSHIFT(SDL_WINDOW_DEFAULT_HEIGHT, 1) - 1), -m_ctx->video_linesize[1],
-                  m_ctx->video_data[2] + m_ctx->video_linesize[2] * (AV_CEIL_RSHIFT(SDL_WINDOW_DEFAULT_HEIGHT, 1) - 1), -m_ctx->video_linesize[2]);
+                  m_data[0] + m_linesize[0] * (m_height - 1), -m_linesize[0],
+                  m_data[1] + m_linesize[1] * (AV_CEIL_RSHIFT(m_height, 1) - 1), -m_linesize[1],
+                  m_data[2] + m_linesize[2] * (AV_CEIL_RSHIFT(m_height, 1) - 1), -m_linesize[2]);
         }
         else {
             spdlog::error("Mixed negative and positive linesizes are not supported");
         }
         break;
     default:
-        if (m_ctx->video_linesize[0] < 0) {
+        if (m_linesize[0] < 0) {
             ret = SDL_UpdateTexture(m_texture, nullptr,
-                    m_ctx->video_data[0] + m_ctx->video_linesize[0] * (SDL_WINDOW_DEFAULT_HEIGHT - 1), -m_ctx->video_linesize[0]);
+                    m_data[0] + m_linesize[0] * (m_height - 1), -m_linesize[0]);
         }
         else {
-            ret = SDL_UpdateTexture(m_texture, nullptr, m_ctx->video_data[0], m_ctx->video_linesize[0]);
+            ret = SDL_UpdateTexture(m_texture, nullptr, m_data[0], m_linesize[0]);
         }
         break;
     }
-    if (ret != 0) {
-        spdlog::error("ret={}, error={}", ret, SDL_GetError());
-    }
     vp->uploaded = 1;
-
     SDL_Rect rect;
     rect.x = 0;
     rect.y = 0;
-    rect.w = SDL_WINDOW_DEFAULT_WIDTH;
-    rect.h = SDL_WINDOW_DEFAULT_HEIGHT;
+    rect.w = m_width;
+    rect.h = m_height;
     ret = SDL_RenderCopy(m_renderer, m_texture, nullptr, &rect);
-    if (ret != 0) {
-        spdlog::error("ret={}, error={}", ret, SDL_GetError());
-    }
 }
 
 void VideoPlayer::create_texture(Uint32 format, int width, int height, SDL_BlendMode blendmode) {
     bool recreate = true;
-    Uint32 fmt;
-    int access, w, h; fmt;
+    Uint32 fmt = SDL_PIXELFORMAT_UNKNOWN;
+    int access = 0, w = 0, h = 0;
     if (m_texture &&
         SDL_QueryTexture(m_texture, &fmt, &access, &w, &h) >= 0
         && fmt == format && w == width && h == height) {
@@ -310,17 +313,33 @@ void VideoPlayer::create_texture(Uint32 format, int width, int height, SDL_Blend
     }
     if (m_texture) {
         SDL_DestroyTexture(m_texture);
+        m_texture = nullptr;
     }
     m_texture = SDL_CreateTexture(m_renderer, format, SDL_TEXTUREACCESS_STREAMING, width, height);
     if (!m_texture) {
         spdlog::error("SDL_CreateTexture failed");
         return;
     }
+
+    void* pixels = nullptr;
+    int pitch = 0;
+    if (SDL_LockTexture(m_texture, nullptr, &pixels, &pitch) >= 0) {
+        memset(pixels, 0, pitch * height);
+        SDL_UnlockTexture(m_texture);
+    }
+    
     if (SDL_SetTextureBlendMode(m_texture, blendmode) < 0) {
-        spdlog::error("SDL_SetTextureBlendMode failed");
+        spdlog::error("SfDL_SetTextureBlendMode failed");
         return;
     }
-    spdlog::info("create texture, width={}, height={}, format={}", width, height, SDL_GetPixelFormatName(format));
+
+    // 更新窗口的大小
+    SDL_SetWindowSize(m_window, width, height);
+    // 更新渲染器的渲染目标大小
+    SDL_RenderSetLogicalSize(m_renderer, width, height);
+    // 更新视口大小
+    SDL_Rect viewport = { 0, 0, width, height };
+    SDL_RenderSetViewport(m_renderer, &viewport);
 }
 
 // 根据视频时钟与同步时钟(如音频时钟)的差值，校正delay值，使视频时钟追赶或等待同步时钟

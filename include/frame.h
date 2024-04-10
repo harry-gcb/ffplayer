@@ -18,6 +18,7 @@ extern "C" {
 class Frame {
 public:
     double vf_duration(Frame *nextvp, double max_frame_duration);
+    void reset();
 
     AVFrame *frame = nullptr; // 指向 FFmpeg 中的 AVFrame 结构体，用于存储视频帧的图像数据
     int serial = 0; // 该帧的序列号，用于seek操作

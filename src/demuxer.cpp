@@ -38,6 +38,51 @@ int Demuxer::close() {
     return 0;
 }
 
+void Demuxer::seek(double incr, int seek_by_bytes) {
+    double pos = -1.0;
+    if (seek_by_bytes) {
+        if (pos < 0) {
+            pos = m_ctx->video_frame_queue.last_pos();
+        }
+        if (pos < 0) {
+            pos = m_ctx->audio_frame_queue.last_pos();
+        }
+        if (pos < 0) {
+            pos = avio_tell(m_ctx->fmt_ctx->pb);
+        }
+        if (m_ctx->fmt_ctx->bit_rate) {
+            incr *= m_ctx->fmt_ctx->bit_rate / 8.0;
+        }
+        else {
+            incr *= 180000.0;
+        }
+        pos += incr;
+    } else {
+        pos = m_ctx->master_clock->get();
+        if (isnan(pos)) {
+            pos = (double)m_ctx->seek_pos / AV_TIME_BASE;
+        }
+        pos += incr;
+        if (m_ctx->fmt_ctx->start_time != AV_NOPTS_VALUE &&
+            pos < m_ctx->fmt_ctx->start_time / (double)AV_TIME_BASE) {
+            pos = m_ctx->fmt_ctx->start_time / (double)AV_TIME_BASE;
+        }
+        pos *= AV_TIME_BASE;
+        incr *= AV_TIME_BASE;
+    }
+    if (!m_ctx->seek_req) {
+        m_ctx->seek_pos = pos;
+        m_ctx->seek_rel = incr;
+        if (seek_by_bytes) {
+            m_ctx->seek_flags |= AVSEEK_FLAG_BYTE;
+        } else {
+            m_ctx->seek_flags &= ~AVSEEK_FLAG_BYTE;
+        }
+        m_ctx->seek_req = 1;
+        m_ctx->demux_cond.notify_one();
+    }
+}
+
 void Demuxer::run() {
     demux_loop();
 }
@@ -58,6 +103,11 @@ void Demuxer::demux_loop() {
             } else {
                 av_read_play(m_ctx->fmt_ctx);
             }
+        }
+        if (m_ctx->paused) {
+            std::unique_lock lock(m_ctx->m_pause_mutex);
+            m_ctx->m_pause_cond.wait_for(lock, std::chrono::milliseconds(40));
+            continue;
         }
         // TODO rtsp paused
 

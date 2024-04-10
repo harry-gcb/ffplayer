@@ -44,8 +44,6 @@ int AudioPlayer::open() {
     // m_audio_hw_buf_size = optained.size;
     m_audio_hw_buf_size = 2048;
     m_bytes_per_sec = av_samples_get_buffer_size(nullptr, desired.channels, desired.freq, AV_SAMPLE_FMT_S16, 1);
-    spdlog::info("open audio player, channels={}, freq={}, format={}, silence={}, samples={}, m_bytes_per_sec={}",
-        desired.channels, desired.freq, desired.format, desired.silence, desired.samples, m_bytes_per_sec);
     return m_audio_dev_id;
 }
 
@@ -62,6 +60,27 @@ int AudioPlayer::stop() {
 int AudioPlayer::close() {
     stop();
     return 0;
+}
+
+void AudioPlayer::update_volume(int volume) {
+    int temp = m_volume;
+    temp += volume * av_q2d(AVRational{ 128, 100 });
+    if (temp > MAX_VOLUME_VALUE) {
+        temp = MAX_VOLUME_VALUE;
+    }
+    else if (temp < MIN_VOLUME_VALUE) {
+        temp = MIN_VOLUME_VALUE;
+    }
+    m_volume = temp;
+    spdlog::info("volume={}", temp);
+}
+
+void AudioPlayer::toggle_mute() {
+    m_muted = !m_muted;
+}
+
+bool AudioPlayer::is_muted() const {
+    return m_muted;
 }
 
 void AudioPlayer::run(Uint8* stream, int len) {
@@ -84,13 +103,13 @@ void AudioPlayer::run(Uint8* stream, int len) {
         if (len1 > len) {
             len1 = len;
         }
-        if (!m_ctx->muted && m_current_audio_buf_data && SDL_MIX_MAXVOLUME == m_ctx->audio_volume) {
+        if (!m_muted && m_current_audio_buf_data && SDL_MIX_MAXVOLUME == m_volume) {
             memcpy(stream, (uint8_t*)m_current_audio_buf_data + m_current_audio_buf_index, len1);
         }
         else {
             memset(stream, 0, len1);
-            if (!m_ctx->muted && m_current_audio_buf_data) {
-                SDL_MixAudioFormat(stream, m_current_audio_buf_data + m_current_audio_buf_index, AUDIO_S16SYS, len1, m_ctx->audio_volume);
+            if (!m_muted && m_current_audio_buf_data) {
+                SDL_MixAudioFormat(stream, m_current_audio_buf_data + m_current_audio_buf_index, AUDIO_S16SYS, len1, m_volume);
             }
         }
         len -= len1;

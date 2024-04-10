@@ -6,12 +6,13 @@ FrameQueue::FrameQueue(PacketQueue *pktq, int max_size, int keep_last)
     m_max_size = std::min(max_size, FRAME_QUEUE_SIZE);
     for (size_t i = 0; i < m_max_size; i++) {
         m_queue[i].frame = av_frame_alloc();
+        m_queue[i].reset();
     }
 }
 FrameQueue::~FrameQueue() {
     for (size_t i = 0; i < m_max_size; i++) {
         Frame* vp = &m_queue[i];
-        av_frame_unref(m_queue[i].frame);
+        m_queue[i].reset();
         av_frame_free(&m_queue[i].frame);
     }
 }
@@ -22,6 +23,14 @@ int FrameQueue::nb_remaining() {
 
 int FrameQueue::rindex_shown() {
     return m_rindex_shown;
+}
+
+int64_t FrameQueue::last_pos() {
+    Frame* fp = &m_queue[m_rindex];
+    if (m_rindex_shown && fp->serial == m_pktq->serial()) {
+        return fp->pos;
+    }
+    return -1;
 }
 
 // 找到可写入帧
@@ -64,7 +73,7 @@ void FrameQueue::next() {
         m_rindex_shown = 1;
         return;
     }
-    av_frame_unref(m_queue[m_rindex].frame);
+    m_queue[m_rindex].reset();
     if (++m_rindex == m_max_size) {
         m_rindex = 0;
     }

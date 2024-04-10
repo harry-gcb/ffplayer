@@ -9,6 +9,10 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#define SDL_WINDOW_DEFAULT_WIDTH  (1080)
+#define SDL_WINDOW_DEFAULT_HEIGHT (720)
+
 class VideoPlayer {
     friend Uint32 callback(Uint32 internal, void* param);
 public:
@@ -17,9 +21,12 @@ public:
     int start();
     int close();
 
+    void update_width_height(int width, int height);
     void toggle_full_screen();
-private:
+
     int run(int interval);
+private:
+    
     double refresh();
     void display();
     void render();
@@ -35,7 +42,16 @@ private:
     SDL_Renderer *m_renderer = nullptr;
     SDL_Texture* m_texture = nullptr;
 
-    std::atomic<bool> m_is_full_screen = false;
+    SwsContext* m_sws_ctx = nullptr;
+    uint8_t* m_data[4] = { nullptr };
+    int m_linesize[4] = { 0 };
+    int m_data_size = 0;
+
+    int m_dst_width = SDL_WINDOW_DEFAULT_WIDTH;
+    int m_dst_height = SDL_WINDOW_DEFAULT_HEIGHT;
+    int m_width = SDL_WINDOW_DEFAULT_WIDTH;
+    int m_height = SDL_WINDOW_DEFAULT_HEIGHT;
+    bool m_is_full_screen = false;
 };
 
 #endif
