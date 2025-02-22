@@ -35,6 +35,7 @@ static const struct TextureFormatEntry {
     { AV_PIX_FMT_BGR32,          SDL_PIXELFORMAT_ABGR8888 },
     { AV_PIX_FMT_BGR32_1,        SDL_PIXELFORMAT_BGRA8888 },
     { AV_PIX_FMT_YUV420P,        SDL_PIXELFORMAT_IYUV },
+    { AV_PIX_FMT_YUVJ420P,       SDL_PIXELFORMAT_IYUV },
     { AV_PIX_FMT_YUYV422,        SDL_PIXELFORMAT_YUY2 },
     { AV_PIX_FMT_UYVY422,        SDL_PIXELFORMAT_UYVY },
     { AV_PIX_FMT_NONE,           SDL_PIXELFORMAT_UNKNOWN },
@@ -218,8 +219,12 @@ void VideoPlayer::display() {
 
 void VideoPlayer::render() {
     Frame* vp = m_ctx->video_frame_queue.peek_last();
-    if (!vp || vp->uploaded) {
+    if (!vp) {
         spdlog::error("vp is nullptr");
+        return;
+    }
+    if (vp->uploaded) {
+        spdlog::error("Frame {} has uploaded", static_cast<void*>(vp));
         return;
     }
 
@@ -315,7 +320,7 @@ void VideoPlayer::create_texture(Uint32 format, int width, int height, SDL_Blend
         SDL_DestroyTexture(m_texture);
         m_texture = nullptr;
     }
-    m_texture = SDL_CreateTexture(m_renderer, format, SDL_TEXTUREACCESS_STREAMING, width, height);
+    m_texture = SDL_CreateTexture(m_renderer, format == SDL_PIXELFORMAT_UNKNOWN ? SDL_PIXELFORMAT_ARGB8888 : format, SDL_TEXTUREACCESS_STREAMING, width, height);
     if (!m_texture) {
         spdlog::error("SDL_CreateTexture failed");
         return;

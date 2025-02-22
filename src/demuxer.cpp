@@ -40,7 +40,7 @@ int Demuxer::close() {
 
 void Demuxer::seek(double incr, int seek_by_bytes) {
     double pos = -1.0;
-    if (seek_by_bytes) {
+    if (seek_by_bytes && !(m_ctx->fmt_ctx->iformat->flags & AVFMT_NO_BYTE_SEEK)) {
         if (pos < 0) {
             pos = m_ctx->video_frame_queue.last_pos();
         }
@@ -52,8 +52,7 @@ void Demuxer::seek(double incr, int seek_by_bytes) {
         }
         if (m_ctx->fmt_ctx->bit_rate) {
             incr *= m_ctx->fmt_ctx->bit_rate / 8.0;
-        }
-        else {
+        } else {
             incr *= 180000.0;
         }
         pos += incr;
@@ -73,7 +72,7 @@ void Demuxer::seek(double incr, int seek_by_bytes) {
     if (!m_ctx->seek_req) {
         m_ctx->seek_pos = pos;
         m_ctx->seek_rel = incr;
-        if (seek_by_bytes) {
+        if (seek_by_bytes && !(m_ctx->fmt_ctx->iformat->flags & AVFMT_NO_BYTE_SEEK)) {
             m_ctx->seek_flags |= AVSEEK_FLAG_BYTE;
         } else {
             m_ctx->seek_flags &= ~AVSEEK_FLAG_BYTE;

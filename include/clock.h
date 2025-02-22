@@ -15,6 +15,7 @@ public:
     void set_at(double pts, int serial, double time);
     double get();
     int serial();
+    void update_speed(double speed);
     // void sync_from_slave(Clock& slave);
     SYNC_TYPE sync_type() const;
 

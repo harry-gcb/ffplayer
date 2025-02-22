@@ -16,7 +16,7 @@ int PacketQueue::put(AVPacket *pkt) {
         ret = _put(pkt1);
     }
     if (ret < 0) {
-        av_packet_free(&pkt);
+        av_packet_free(&pkt1);
     }
     return ret;
 }

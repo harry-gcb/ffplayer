@@ -1,5 +1,6 @@
 #include "clock.h"
 #include "opts.h"
+#include <spdlog/spdlog.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,11 @@ double Clock::get() {
         double time = av_gettime_relative() / 1000000.0;
         return m_pts_drift + time - (time - m_last_updated) * (1.0 - m_speed);
     }
+}
+
+void Clock::update_speed(double speed) {
+    m_speed += speed;
+    spdlog::info("current speed={}", m_speed);
 }
 
 int Clock::serial() {

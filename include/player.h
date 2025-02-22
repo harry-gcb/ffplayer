@@ -9,7 +9,7 @@
 #include "video_player.h"
 #include "audio_player.h"
 
-#define SEEK_BY_BYTES 0
+#define SEEK_BY_BYTES 1
 
 class Player {
 public:

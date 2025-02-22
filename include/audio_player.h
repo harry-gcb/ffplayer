@@ -24,8 +24,8 @@ public:
     int stop();
     int close();
 
-    void toggle_mute();         // ¾²Òô
-    void update_volume(int volume); // ÒôÁ¿¿ØÖÆ
+    void toggle_mute();         // é™éŸ³
+    void update_volume(int volume); // æ›´æ–°å£°éŸ³
 
     bool is_muted() const;
 private:

@@ -45,7 +45,7 @@ int EventLoop::run(Player &player) {
                 player.volume_down(1);
                 break;
             case SDLK_LEFT:
-                player.seek_backward(10.0);
+                player.seek_backward(-10.0);
                 break;
             case SDLK_RIGHT:
                 player.seek_forward(10.0);

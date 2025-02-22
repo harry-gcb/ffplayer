@@ -89,8 +89,8 @@ void Player::seek_backward(double incr, bool seek_by_bytes) {
     m_demuxer->seek(incr, seek_by_bytes);
 }
 void Player::speed_up(double speed) {
-
+    // m_ctx->master_clock->update_speed(speed);
 }
 void Player::speed_down(double speed) {
-
+    // m_ctx->master_clock->update_speed(speed);
 }
